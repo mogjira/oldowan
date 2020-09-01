@@ -3,6 +3,9 @@
 #include <string.h>
 
 #define STR_LEN 512
+#define ESC_CHAR_COUNT 2
+
+const char escapeChars[ESC_CHAR_COUNT] = {'"'};
 
 int main(int argc, char *argv[])
 {
@@ -19,16 +22,29 @@ int main(int argc, char *argv[])
     char buffer[STR_LEN];
     while(fgets(buffer, STR_LEN, srcFile))
     {
-        int linesize = strlen(buffer);
-        char outBuffer[linesize + 4];
-        strcpy(outBuffer + 1, buffer);
-        outBuffer[0] = '\"';
-        outBuffer[linesize] = '\\';
-        outBuffer[1 + linesize] = 'n';
-        outBuffer[2 + linesize] = '\"';
-        outBuffer[3 + linesize] = '\n';
-        outBuffer[4 + linesize] = '\0';
-        printf("%s\n", outBuffer);
+        const int linesize = strlen(buffer);
+        char outBuffer[STR_LEN];
+        memset(outBuffer, 0, STR_LEN);
+        char* outIter = outBuffer;
+        *outIter++ = '"';
+        for (int i = 0; i < linesize; i++) 
+        {
+            const char c = buffer[i];
+            for (int j = 0; j < ESC_CHAR_COUNT; j++) 
+            {
+                if (escapeChars[j] == c)
+                {
+                    *outIter++ = '\\';
+                }
+            }
+            *outIter++ = c;
+        }
+        *outIter++ = '\"';
+        *outIter++ = '\\';
+        *outIter++ = 'n';
+        *outIter++ = '\"';
+        *outIter++ = '\n';
+        *outIter++ = '\0';
         assert(fputs(outBuffer, outFile));
     }
 
