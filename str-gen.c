@@ -3,9 +3,6 @@
 #include <string.h>
 
 #define STR_LEN 512
-#define ESC_CHAR_COUNT 2
-
-const char escapeChars[ESC_CHAR_COUNT] = {'"'};
 
 int main(int argc, char *argv[])
 {
@@ -26,20 +23,19 @@ int main(int argc, char *argv[])
         char outBuffer[STR_LEN];
         memset(outBuffer, 0, STR_LEN);
         char* outIter = outBuffer;
+        *outIter++ = ' ';
+        *outIter++ = ' ';
+        *outIter++ = ' ';
+        *outIter++ = ' ';
         *outIter++ = '"';
         for (int i = 0; i < linesize; i++) 
         {
             const char c = buffer[i];
-            for (int j = 0; j < ESC_CHAR_COUNT; j++) 
-            {
-                if (escapeChars[j] == c)
-                {
-                    *outIter++ = '\\';
-                }
-            }
+            if (c == '"' || c == '\\')
+                *outIter++ = '\\';
             *outIter++ = c;
         }
-        *outIter++ = '\"';
+        outIter--;
         *outIter++ = '\\';
         *outIter++ = 'n';
         *outIter++ = '\"';
