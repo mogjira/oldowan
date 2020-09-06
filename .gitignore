@@ -1,8 +1,3 @@
 bin/*
-bin
-as
-sg
-a.out
 gen/*
-gen
-strgen
+out/*
