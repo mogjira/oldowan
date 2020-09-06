@@ -7,6 +7,7 @@ r_render.c
 #define VK_USE_PLATFORM_XCB_KHR
 
 #include "v_def.h"
+#include "m_math.h"
 
 typedef struct {
     VkImage         handle;
@@ -28,9 +29,14 @@ typedef struct frame {
     VkImage*        pImage;
     VkImageView     imageView;
     VkFramebuffer   frameBuffer;
-    VkRenderPass*   pRenderPass;
+    VkRenderPass    renderPass;
     uint32_t        index;
 } Frame;
+
+typedef struct {
+    Vec2 pos;
+    Vec3 color;
+} Vertex;
 
 extern VkPipeline pipelines[MAX_PIPELINES];
 extern VkRenderPass swapchainRenderPass;

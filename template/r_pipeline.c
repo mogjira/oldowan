@@ -17,7 +17,7 @@ static VkDescriptorPool      descriptorPool;
 
 enum shaderStageType { VERT, FRAG };
 
-#define PIPELINE_COUNT 3
+#define PIPELINE_COUNT 1
 #define DESCRIPTOR_SET_COUNT 1
 
 static void initShaderModule(const char* filepath, VkShaderModule* module)
@@ -134,11 +134,6 @@ static void initPipelineLayouts(void)
 
     r = vkCreatePipelineLayout(device, &info, NULL, &pipelineLayoutGeometry);
     assert( VK_SUCCESS == r );
-    
-    info.pSetLayouts = &descriptorSetLayoutPostProcess;
-
-    r = vkCreatePipelineLayout(device, &info, NULL, &pipelineLayoutPostProcess);
-    assert( VK_SUCCESS == r );
 }
 
 void initPipelines(void)
@@ -148,8 +143,8 @@ void initPipelines(void)
     VkShaderModule vertModule;
     VkShaderModule fragModule;
 
-    initShaderModule("shaders/spv/simple-vert.spv", &vertModule);
-    initShaderModule("shaders/spv/simple-frag.spv", &fragModule);
+    initShaderModule("shaders/spv/default-vert.spv", &vertModule);
+    initShaderModule("shaders/spv/default-frag.spv", &fragModule);
 
     const VkSpecializationInfo shaderSpecialInfo = {
         // TODO
@@ -170,7 +165,7 @@ void initPipelines(void)
 
     const VkVertexInputBindingDescription bindingDescription = {
         .binding = 0,
-        .stride  = sizeof(Vec2), // all our verts will be 2D
+        .stride  = sizeof(Vertex), // all our verts will be 2D
         .inputRate = VK_VERTEX_INPUT_RATE_VERTEX
     };
 
@@ -181,17 +176,28 @@ void initPipelines(void)
         .offset = 0,
     };
 
+    const VkVertexInputAttributeDescription colorAttributeDescription = {
+        .binding = 0,
+        .location = 1, 
+        .format = VK_FORMAT_R32G32B32_SFLOAT,
+        .offset = sizeof(Vec2),
+    };
+
+    VkVertexInputAttributeDescription vAttrDescs[2] = {
+        positionAttributeDescription, colorAttributeDescription
+    };
+
     const VkPipelineVertexInputStateCreateInfo vertexInput = {
         .sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO,
         .vertexBindingDescriptionCount = 1,
         .pVertexBindingDescriptions = &bindingDescription,
-        .vertexAttributeDescriptionCount = 1,
-        .pVertexAttributeDescriptions = &positionAttributeDescription
+        .vertexAttributeDescriptionCount = 2,
+        .pVertexAttributeDescriptions = vAttrDescs 
     };
 
     const VkPipelineInputAssemblyStateCreateInfo inputAssembly = {
         .sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO,
-        .topology = VK_PRIMITIVE_TOPOLOGY_LINE_STRIP,
+        .topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST,
         .primitiveRestartEnable = VK_FALSE // applies only to index calls
     };
 
@@ -221,11 +227,11 @@ void initPipelines(void)
         .sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO,
         .depthClampEnable = VK_FALSE, // dunno
         .rasterizerDiscardEnable = VK_FALSE, // actually discards everything
-        .polygonMode = VK_POLYGON_MODE_LINE,
+        .polygonMode = VK_POLYGON_MODE_FILL,
         .cullMode = VK_CULL_MODE_BACK_BIT,
         .frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE,
         .depthBiasEnable = VK_FALSE,
-        .lineWidth = 4.0
+        .lineWidth = 1.0
     };
 
     const VkPipelineMultisampleStateCreateInfo multisampleState = {
@@ -263,7 +269,7 @@ void initPipelines(void)
         .basePipelineIndex = 0, // not used
         .basePipelineHandle = 0,
         .subpass = 0, // which subpass in the renderpass do we use this pipeline with
-        .renderPass = offscreenRenderPass,
+        .renderPass = swapchainRenderPass,
         .layout = pipelineLayoutGeometry,
         .pDynamicState = NULL,
         .pColorBlendState = &colorBlendState,
@@ -280,65 +286,12 @@ void initPipelines(void)
         .pInputAssemblyState = &inputAssembly,
     };
 
-    // ----------------------------------------------------------
-    // creating the second pipeline info for the emitables
-    // ----------------------------------------------------------
-
-    VkPipelineInputAssemblyStateCreateInfo inputAssemblyEmit = inputAssembly;
-    inputAssemblyEmit.topology = VK_PRIMITIVE_TOPOLOGY_POINT_LIST;
-
-    VkPipelineRasterizationStateCreateInfo rasterizationStateEmit = rasterizationState;
-    rasterizationStateEmit.polygonMode = VK_POLYGON_MODE_POINT;
-
-    VkGraphicsPipelineCreateInfo emitablePipelineInfo = pipelineInfo;
-    emitablePipelineInfo.pRasterizationState = &rasterizationStateEmit;
-    emitablePipelineInfo.pInputAssemblyState = &inputAssemblyEmit;
-
-    // ----------------------------------------------------------
-    // creating the third pipeline info for post processing
-    // ----------------------------------------------------------
-
-    VkPipelineInputAssemblyStateCreateInfo inputAssemblyPostProc = inputAssembly;
-    inputAssemblyPostProc.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
-
-    VkPipelineRasterizationStateCreateInfo rasterizationStatePostProc = rasterizationState;
-    rasterizationStatePostProc.polygonMode = VK_POLYGON_MODE_FILL;
-
-    const VkPipelineVertexInputStateCreateInfo postProcInputState = {
-        .sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO,
-        .vertexAttributeDescriptionCount = 0,
-        .vertexBindingDescriptionCount = 0,
-    };
-
-    VkShaderModule postProcVertModule;
-    VkShaderModule postProcFragModule;
-
-    initShaderModule("shaders/spv/postproc-vert.spv", &postProcVertModule);
-    initShaderModule("shaders/spv/glow-only-frag.spv", &postProcFragModule);
-
-    VkPipelineShaderStageCreateInfo postProcShaderStages[2] = {shaderStages[0], shaderStages[1]};
-    postProcShaderStages[0].module = postProcVertModule;
-    postProcShaderStages[1].module = postProcFragModule;
-    
-    // ----------------------------------------------------------
-    // ----------------------------------------------------------
-
-    VkGraphicsPipelineCreateInfo postProcPipelineInfo = pipelineInfo;
-    postProcPipelineInfo.pRasterizationState = &rasterizationStatePostProc;
-    postProcPipelineInfo.pInputAssemblyState = &inputAssemblyPostProc;
-    postProcPipelineInfo.pVertexInputState = &postProcInputState;
-    postProcPipelineInfo.pStages           = postProcShaderStages;
-    postProcPipelineInfo.layout            = pipelineLayoutPostProcess;
-    postProcPipelineInfo.renderPass        = swapchainRenderPass;
-
-    VkGraphicsPipelineCreateInfo infos[PIPELINE_COUNT] = {pipelineInfo, emitablePipelineInfo, postProcPipelineInfo};
+    VkGraphicsPipelineCreateInfo infos[PIPELINE_COUNT] = {pipelineInfo};
 
     vkCreateGraphicsPipelines(device, VK_NULL_HANDLE, PIPELINE_COUNT, infos, NULL, pipelines);
 
     vkDestroyShaderModule(device, vertModule, NULL);
     vkDestroyShaderModule(device, fragModule, NULL);
-    vkDestroyShaderModule(device, postProcVertModule, NULL);
-    vkDestroyShaderModule(device, postProcFragModule, NULL);
     vkDestroyDescriptorSetLayout(device, descriptorSetLayoutEmpty, NULL);
     vkDestroyDescriptorSetLayout(device, descriptorSetLayoutPostProcess, NULL);
 }

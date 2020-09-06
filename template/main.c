@@ -4,7 +4,7 @@
 #include "d_display.h"
 #include "v_video.h"
 #include "r_render.h"
-#include "a_audio.h"
+#include "r_commands.h"
 #include "i_input.h"
 #include <stdio.h>
 #include <assert.h>
@@ -19,8 +19,6 @@ jmp_buf exit_game;
 
 int main(int argc, char *argv[])
 {
-    a_Init();
-    printf("Audio initialized\n");
     d_Init();
     printf("Display initialized\n");
     v_Init();
@@ -40,6 +38,8 @@ int main(int argc, char *argv[])
     unsigned long nsDelta = 0;
     uint32_t shortestFrame = NS_PER_S;
     uint32_t longestFrame = 0;
+
+    r_InitRenderCommands();
 
     while( 1 ) 
     {
@@ -71,6 +71,5 @@ int main(int argc, char *argv[])
     r_CleanUp();
     v_CleanUp();
     d_CleanUp();
-    a_CleanUp();
     return 0;
 }

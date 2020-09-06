@@ -11,6 +11,12 @@ typedef struct {
 } Vec2;
 
 typedef struct {
+    float x;
+    float y;
+    float z;
+} Vec3;
+
+typedef struct {
     float x00, x01, x10, x11;
 } Mat2;
 

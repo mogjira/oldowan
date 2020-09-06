@@ -5,11 +5,11 @@
 #include <stdbool.h>
 
 typedef struct {
-    size_t    size;
-    uint8_t*  address;
-    int       vOffset;
-    VkBuffer* vBuffer;
-    bool      isMapped;
+    size_t       size;
+    uint8_t*     address;
+    VkDeviceSize vOffset;
+    VkBuffer*    vBuffer;
+    bool         isMapped;
 } V_block;
 
 extern uint8_t* hostBuffer;

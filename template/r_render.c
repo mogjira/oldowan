@@ -82,6 +82,8 @@ static void initFrames(void)
 
         r = vkCreateImageView(device, &imageViewInfo, NULL, &frames[i].imageView);
         assert( VK_SUCCESS == r );
+
+        frames[i].renderPass = swapchainRenderPass;
     }
     V1_PRINT("Frames successfully initialized.\n");
 }
@@ -235,14 +237,12 @@ static void initFrameBuffers(void)
         const VkFramebufferCreateInfo ci = {
             .sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO,
             .layers = 1,
-            .renderPass = swapchainRenderPass,
+            .renderPass = frames->renderPass,
             .width = WINDOW_WIDTH,
             .height = WINDOW_HEIGHT,
             .attachmentCount = 1,
             .pAttachments = &frames[i].imageView,
         };
-
-        frames[i].pRenderPass = &swapchainRenderPass;
 
         r = vkCreateFramebuffer(device, &ci, NULL, &frames[i].frameBuffer);
         assert( VK_SUCCESS == r );

@@ -11,8 +11,10 @@ int main(int argc, char *argv[])
         printf("Usage: %s path-to-source path-to-output\n", argv[0]);
         return -1;
     }
+    printf("in: %-30s", argv[1]);
     FILE* srcFile = fopen(argv[1], "r");
     assert(srcFile);
+    printf("out: %s\n", argv[2]);
     FILE* outFile = fopen(argv[2], "w");
     assert(outFile);
 
@@ -23,6 +25,10 @@ int main(int argc, char *argv[])
         char outBuffer[STR_LEN];
         memset(outBuffer, 0, STR_LEN);
         char* outIter = outBuffer;
+        *outIter++ = ' ';
+        *outIter++ = ' ';
+        *outIter++ = ' ';
+        *outIter++ = ' ';
         *outIter++ = ' ';
         *outIter++ = ' ';
         *outIter++ = ' ';
